@@ -1,0 +1,2 @@
+mappings:
+  LatLongField: Restruct\SilverStripe\Forms\LatLongField

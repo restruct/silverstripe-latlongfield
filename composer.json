@@ -1,14 +1,24 @@
 {
-    "name": "micschk/silverstripe-latlongfield",
-    "description": "Stand-alone latlong field, abstracted from mappable or a comparable module",
-    "type": "silverstripe-module",
-    "keywords": ["silverstripe", "mappable", "geocoding"],
-    "authors": [
+  "name": "restruct/silverstripe-latlongfield",
+  "description": "Stand-alone latlong field, abstracted from mappable or a comparable module",
+  "type": "silverstripe-vendormodule",
+  "keywords": ["silverstripe", "mappable", "geocoding"],
+  "authors": [
     {
-        "name": "micschk"
+      "name": "restruct"
     }],
-	"extra": {
-		"installer-name": "latlongfield"
-	}
-    
+  "autoload": {
+    "psr-4": {
+      "Restruct\\SilverStripe\\Forms\\": "src/"
+    }
+  },
+  "require" : {
+    "ext-json": "*"
+  },
+  "extra": {
+    "expose": [
+      "client"
+    ]
+  }
+
 }

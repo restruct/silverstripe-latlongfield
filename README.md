@@ -6,5 +6,9 @@ CMS editor can type street address, then click search. A (draggable) pointer wil
 Originally abstracted from the mappable module (I think).
 
 ## Requirements
-SilverStripe 3.0 or higher
+SilverStripe 4.0 or higher
 
+## Config (upgrade: move LatLongField::google_maps_api_key to environment var)
+.env:
+  GMAPS_API_KEY: ...
+  GMAPS_BROWSER_KEY: ... (optional secondary 'public' key to use in the browser)
