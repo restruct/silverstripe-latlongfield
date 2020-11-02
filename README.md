@@ -13,5 +13,5 @@ SilverStripe 4.0 or higher
 
 ```
 .env:
-  GMAPS_API_KEY: ...
-  GMAPS_BROWSER_KEY: ... (optional secondary 'public' key to use in the browser)
+GMAPS_API_KEY="..."
+GMAPS_BROWSER_KEY="..." (optional secondary 'public' key to use in the browser)
