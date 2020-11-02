@@ -3,6 +3,7 @@
   "description": "Stand-alone latlong field, abstracted from mappable or a comparable module",
   "type": "silverstripe-vendormodule",
   "keywords": ["silverstripe", "mappable", "geocoding"],
+  "license": "BSD-3-Clause",
   "authors": [
     {
       "name": "restruct"
