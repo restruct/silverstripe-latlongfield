@@ -105,7 +105,7 @@ class LatLongField
             // String
             if(is_string($field)) $ret[] = ArrayData::create(array('value' => $field));
             // pointer to FormField (use getName())
-            if(is_object($field) && $field->is_a(FormField::class)){
+            if(is_object($field) && is_a($field, FormField::class)){
                 $ret[] = ArrayData::create(array('value' => $field->getName()));
             }
         }
