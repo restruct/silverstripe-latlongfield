@@ -86,7 +86,7 @@ class LatLongField
             $this->setAttribute('placeholder', '(empty / no location yet)');
 
         if(!$this->RightTitle() && !$this->getDescription())
-            $this->setDescription('Type an address (eg. "49 Oxford Street, London") and click "🔍" (Search)');
+            $this->setDescription('Type an address (eg. “49 Oxford Street, London”) and click “🔍” (search)');
 
         return parent::Field($properties = array());
     }
