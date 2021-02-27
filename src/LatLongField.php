@@ -44,6 +44,16 @@ class LatLongField
      */
     protected $location_picker_options = array();
 
+    public function __construct(string $name, ?string $title = null, string $value = '', ?int $maxLength = null, ?Form $form = null)
+    {
+        parent::__construct($name, $title, $value, $maxLength, $form);
+
+        Requirements::css('restruct/silverstripe-latlongfield:client/css/latlongfield.css');
+        Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
+        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
+        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
+    }
+
     /**
      * Get the value of GMAPS_API_KEY from environment.
      * Allowing an optional secondary GMAPS_BROWSER_KEY facilitates working with two keys,
@@ -67,30 +77,18 @@ class LatLongField
     {
         $this->addExtraClass('text'); // for styling...
 
-        // @TODO: Setting readonly would not allow clearing this field - may explicity clear only? Or just allow manual input altogether...
-//        if($this->address_input_fields) {
-//            $this->setAttribute('readonly', 'readonly');
-//        }
+        if($this->address_input_fields) {
+            $this->setAttribute('readonly', 'readonly');
+        }
+
+
+        if(!$this->getAttribute('placeholder'))
+            $this->setAttribute('placeholder', '(empty / no location yet)');
 
         if(!$this->RightTitle())
-            $this->setRightTitle('Type an address (eg. "49 Oxford Street, London") and click "Search"');
+            $this->setRightTitle('Type an address (eg. "49 Oxford Street, London") and click "🔍" (Search)');
 
         return parent::Field($properties = array());
-    }
-
-    public function FieldHolder($properties = array())
-    {
-//        Requirements::javascript('silverstripe/admin:thirdparty/jquery/jquery.js');
-//        Requirements::css('silverstripe/admin:thirdparty/jquery-ui-themes/smoothness/jquery-ui.css');
-//        Requirements::javascript('silverstripe/admin:thirdparty/jquery-ui/jquery-ui.js');
-
-        Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
-
-        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
-        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
-        Requirements::css('restruct/silverstripe-latlongfield:client/css/latlongfield.css');
-
-        return parent::FieldHolder($properties = array());
     }
 
     /**

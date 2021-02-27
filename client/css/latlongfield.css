@@ -1,2 +1,7 @@
-.field input.latlong { width: 440px; margin-right: 6px; display: inline-block; }
-.picker-search-button { padding: 6px 10px; display: inline-block; }
+/*.field input.latlong { width: 440px; margin-right: 6px; display: inline-block; }*/
+/*.picker-search-button { padding: 6px 10px; display: inline-block; }*/
+.btn.btn-latlong { margin: 0; }
+.latlong-fieldgroup {
+  max-width: 440px;
+
+}

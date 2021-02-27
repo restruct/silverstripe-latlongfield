@@ -1,0 +1,20 @@
+---
+name: latlongfield
+---
+#SilverStripe\Admin\LeftAndMain:
+#  extra_requirements_css:
+#    - 'restruct/silverstripe-latlongfield:client/css/latlongfield.css'
+#  extra_requirements_javascript:
+#    - '//maps.google.com/maps/api/js?key=`GMAPS_API_KEY`' # the key can only be 'injected' but I didn't get JS reqs working via that (see below)
+#    - 'restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js'
+#    - 'restruct/silverstripe-latlongfield:client/js/latlongfield.js'
+
+#SilverStripe\Core\Injector\Injector:
+#  SilverStripe\Admin\LeftAndMain:
+#    properties:
+#      extra_requirements_css:
+#        - 'restruct/silverstripe-latlongfield:client/css/latlongfield.css'
+#      extra_requirements_javascript:
+#        - '//maps.google.com/maps/api/js?key=`GMAPS_API_KEY`'
+#        - 'restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js'
+#        - 'restruct/silverstripe-latlongfield:client/js/latlongfield.js'
