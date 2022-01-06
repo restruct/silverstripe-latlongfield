@@ -9,30 +9,13 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\View\ArrayData;
 use SilverStripe\View\Requirements;
+use SilverStripe\View\TemplateGlobalProvider;
 
 class LatLongField
     extends TextField
+    implements TemplateGlobalProvider
 {
     protected $template = 'LatLongField';
-
-//    /**
-//     * @config
-//     */
-//    private static $google_maps_api_key;
-
-    /**
-     * Allow setting a custom js/jquery input selection for the address fields
-     * Javascript code which should return a string when evaluated, 'that' being the original field
-     */
-//	protected $js_input_selector = '$(that).val()';
-//
-//	public function getInputSelector(){
-//		return $this->js_input_selector;
-//	}
-//
-//	public function setInputSelector($val){
-//		$this->js_input_selector = $val;
-//	}
 
     /**
      * @var string[]
@@ -52,6 +35,13 @@ class LatLongField
         Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
         Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
         Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
+    }
+
+    public static function get_template_global_variables()
+    {
+        return [
+            'GMapsApiKey' => 'gmaps_api_key',
+        ];
     }
 
     /**
