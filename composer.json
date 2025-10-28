@@ -12,7 +12,8 @@
       "Restruct\\SilverStripe\\Forms\\": "src/"
     }
   },
-  "require" : {
+  "require": {
+    "silverstripe/framework": "^5",
     "ext-json": "*"
   },
   "extra": {

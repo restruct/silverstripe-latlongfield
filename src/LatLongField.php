@@ -2,11 +2,11 @@
 
 namespace Restruct\SilverStripe\Forms;
 
-use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use SilverStripe\Forms\FormField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\ArrayList;
+use SilverStripe\ORM\FieldType\DBHTMLVarchar;
 use SilverStripe\View\ArrayData;
 use SilverStripe\View\Requirements;
 use SilverStripe\View\TemplateGlobalProvider;
@@ -97,8 +97,27 @@ class LatLongField
                 $ret[] = ArrayData::create(array('value' => $field->getName()));
             }
         }
-        return new ArrayList($ret);
+        return ArrayList::create($ret);
     }
+
+
+    /**
+     * @return string|false JSON encoded array of address field names
+     */
+    public function getAddressInputFieldsJSON()
+    {
+        if (!count($this->address_input_fields)) return false;
+        $ret = [];
+        foreach ($this->address_input_fields as $field) {
+            if (is_string($field) && $field !== '') {
+                $ret[] = $field;
+            } elseif (is_object($field) && is_a($field, FormField::class)) {
+                $ret[] = $field->getName();
+            }
+        }
+        return DBHTMLVarchar::create()->setValue(json_encode($ret));
+    }
+
 
     /**
      * @param string $fieldName
@@ -126,7 +145,7 @@ class LatLongField
         foreach($this->location_picker_options as $key => $val){
             $ret[] = ArrayData::create(array('key' => $key,'val'=>$val));
         }
-        return new ArrayList($ret);
+        return ArrayList::create($ret);
     }
 
     /**
@@ -210,8 +229,8 @@ class LatLongField
 //        //Debug::dump("Distance Eiffel Tower (48.858278,2.294254) - Big Ben (51.500705,-0.124575): $result KM");
 //        return $result;
 
-        list($lat1, $lng1) = explode(",", $fromcoordinate, 2);
-        list($lat2, $lng2) = explode(",", $tocoordinate, 2);
+        [$lat1, $lng1] = explode(",", $fromcoordinate, 2);
+        [$lat2, $lng2] = explode(",", $tocoordinate, 2);
 
         $pi80 = M_PI / 180;
         $lat1 *= $pi80;
