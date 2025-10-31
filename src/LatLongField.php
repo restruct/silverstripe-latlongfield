@@ -3,6 +3,7 @@
 namespace Restruct\SilverStripe\Forms;
 
 use SilverStripe\Core\Environment;
+use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FormField;
 use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\ArrayList;
@@ -20,12 +21,12 @@ class LatLongField
     /**
      * @var string[]
      */
-    protected $address_input_fields = array();
+    protected $address_input_fields = [];
 
     /**
      * @var string[]
      */
-    protected $location_picker_options = array();
+    protected $location_picker_options = [];
 
     public function __construct(string $name, ?string $title = null, string $value = '', ?int $maxLength = null, ?Form $form = null)
     {
@@ -63,59 +64,31 @@ class LatLongField
         return Environment::getEnv('GMAPS_API_KEY');
     }
 
-    public function Field($properties = array())
+    public function Field($properties = [])
     {
         $this->addExtraClass('text'); // for styling...
 
         if($this->address_input_fields) {
             $this->setAttribute('readonly', 'readonly');
         }
-
-
-        if(!$this->getAttribute('placeholder'))
+        if(!$this->getAttribute('placeholder')) {
             $this->setAttribute('placeholder', '(empty / no location yet)');
-
-        if(!$this->RightTitle() && !$this->getDescription())
+        }
+        if(!$this->RightTitle() && !$this->getDescription()) {
             $this->setDescription('Type an address (eg. “49 Oxford Street, London”) and click “🔍” (search)');
-
-        return parent::Field($properties = array());
+        }
+        return parent::Field($properties = []);
     }
 
     /**
-     * @return boolean|ArrayList
+     * @return array of address field names
      */
     public function getAddressInputFields()
     {
-        if(!count($this->address_input_fields)) return false;
-        $ret = array();
-        // $this->address_input_fields can be FormFields or strings of fieldNames
-        foreach($this->address_input_fields as $field){
-            // String
-            if(is_string($field)) $ret[] = ArrayData::create(array('value' => $field));
-            // pointer to FormField (use getName())
-            if(is_object($field) && is_a($field, FormField::class)){
-                $ret[] = ArrayData::create(array('value' => $field->getName()));
-            }
-        }
-        return ArrayList::create($ret);
-    }
-
-
-    /**
-     * @return string|false JSON encoded array of address field names
-     */
-    public function getAddressInputFieldsJSON()
-    {
-        if (!count($this->address_input_fields)) return false;
-        $ret = [];
         foreach ($this->address_input_fields as $field) {
-            if (is_string($field) && $field !== '') {
-                $ret[] = $field;
-            } elseif (is_object($field) && is_a($field, FormField::class)) {
-                $ret[] = $field->getName();
-            }
+            $fields[] = is_object($field) && is_a($field, FormField::class) ? $field->getName() : $field;
         }
-        return DBHTMLVarchar::create()->setValue(json_encode($ret));
+        return count($fields) ? $fields : null;
     }
 
 
@@ -140,12 +113,7 @@ class LatLongField
      */
     public function getLocationPickerOptions()
     {
-        if(!count($this->location_picker_options)) return false;
-        $ret = array();
-        foreach($this->location_picker_options as $key => $val){
-            $ret[] = ArrayData::create(array('key' => $key,'val'=>$val));
-        }
-        return ArrayList::create($ret);
+        return count($this->location_picker_options) ? $this->location_picker_options : null;
     }
 
     /**
@@ -248,7 +216,5 @@ class LatLongField
         //return $km;
         return round($km, $decimals);
     }
-
-
 
 }
