@@ -340,7 +340,7 @@ class LatLongFieldTest extends SapphireTest
         $this->assertSame(340.6, $km);
         $this->assertSame(340.64, LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575', 2));
 
-        $this->assertEquals(341,LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575'));
+        $this->assertEquals(341, LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575'));
         $this->assertEquals(0, LatLongField::calCulateDistance('52.1,4.4', '52.1,4.4'));
         # A space after the comma, as in hand-typed coordinates
         $this->assertEqualsWithDelta(340.5, LatLongField::calCulateDistance('48.858278, 2.294254', '51.500705, -0.124575', 1), 1.0);

@@ -10,6 +10,10 @@ use SilverStripe\Dev\SapphireTest;
  * The field loads its script and stylesheet as module resources. Each can fail silently: a
  * resource that does not exist, or one outside a composer `extra.expose` directory, gives the CMS a
  * /_resources URL that 404s with nothing wrong in PHP.
+ *
+ * What this checks is the module's side of that: each source file exists and its path lies inside
+ * an `extra.expose` entry of composer.json. It does not check that vendor-plugin actually published
+ * the file under public/_resources/ in the host project.
  */
 class ResourcesTest extends SapphireTest
 {
