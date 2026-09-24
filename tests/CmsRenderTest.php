@@ -23,10 +23,24 @@ class CmsRenderTest extends FunctionalTest
 
     private array $envBackup = [];
 
+    /**
+     * Without silverstripe/cms the stub page is never declared (see its file), and SapphireTest's
+     * setUpBeforeClass() builds the temp database with TableBuilder, which instantiates every
+     * extra data object with no class_exists() check. Listing the missing class there is a hard
+     * "Class not found" error before setUp() and its skip ever run, so it is only listed when the
+     * stub exists. The module requires framework only, so a host without cms is a real shape.
+     */
+    public static function getExtraDataObjects()
+    {
+        return class_exists(LatLongTestPage::class) ? parent::getExtraDataObjects() : [];
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
-        if (!class_exists(SiteTree::class)) {
+        # The stub is declared only when SiteTree exists; checking both keeps the skip in step
+        # with getExtraDataObjects() above.
+        if (!class_exists(SiteTree::class) || !class_exists(LatLongTestPage::class)) {
             $this->markTestSkipped('silverstripe/cms is not installed');
         }
         $this->envBackup = Environment::getVariables();
