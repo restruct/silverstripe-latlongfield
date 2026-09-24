@@ -114,9 +114,11 @@ class LatLongField
     /**
      * JSON for the template's data-addressfields attribute ("null" when none are set).
      *
-     * The template used to pipe the array getter through `.JSON`. Silverstripe 6 wraps a list
-     * array in an ArrayList, which has no JSON(), so the attribute rendered empty there. Encoding
-     * here gives the same output on 5 and 6; the template's default casting attribute-escapes it.
+     * The template used to pipe the array getters through `.JSON`. Silverstripe 6 casts an array
+     * returned to a template into an ArrayList (list array, as here) or an ArrayData (associative
+     * array, as getLocationPickerOptions() returns); neither has JSON(), so both attributes rendered
+     * empty there. Encoding here gives the same output on 5 and 6; the template's default casting
+     * attribute-escapes it.
      *
      * @return string
      */

@@ -72,9 +72,10 @@ class LatLongFieldTest extends SapphireTest
     }
 
     /**
-     * Regression: the template piped the getters' arrays through `.JSON`. Silverstripe 6 wraps a
-     * list array in an ArrayList, which has no JSON(), so both data attributes rendered empty and
-     * the address lookup and picker options were silently lost.
+     * Regression: the template piped the getters' arrays through `.JSON`. Silverstripe 6 casts a
+     * list array to an ArrayList and an associative one to an ArrayData, neither of which has
+     * JSON(), so both data attributes rendered empty and the address lookup and picker options
+     * were silently lost.
      */
     public function testAddressInputFieldsReachTheDataAttribute()
     {

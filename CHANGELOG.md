@@ -21,8 +21,9 @@ Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major re
 - A field without address input fields threw a `TypeError` on PHP 8 as soon as it rendered
   (`getAddressInputFields()` counted an undefined variable).
 - On Silverstripe 6, `data-addressfields` and `data-locationpickeroptions` rendered empty, so the
-  address lookup from other fields and the map options were silently lost. Silverstripe 6 wraps a
-  list array in an `ArrayList`, which has no `JSON()`; the JSON is now built in PHP
+  address lookup from other fields and the map options were silently lost. Silverstripe 6 casts a
+  list array to an `ArrayList` and an associative one to an `ArrayData`, and neither has `JSON()`;
+  the JSON is now built in PHP
   (`getAddressInputFieldsJSON()`, `getLocationPickerOptionsJSON()`) and renders the same on 5 and 6.
 - `validateLatLong()` rejected any coordinate on the equator or the prime meridian (`"0,5.1"`).
 - `calCulateDistance()` threw a `TypeError` on a malformed coordinate. Projects that pass a value

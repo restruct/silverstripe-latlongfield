@@ -15,6 +15,11 @@ The class name and namespace (`Restruct\SilverStripe\Forms\LatLongField`), the c
 environment variables and the `$GMapsApiKey` template variable are unchanged. Nothing to edit in
 `_config` or templates.
 
+Flush after upgrading (`?flush=1`, or `vendor/bin/sake dev/build flush=1` on Silverstripe 5 and
+`vendor/bin/sake db:build --flush` on Silverstripe 6).
+Without a flush, Silverstripe 6 keeps serving the previously compiled field template, and its data
+attributes stay empty.
+
 ### Behaviour you may notice
 
 - **`validateLatLong()`** now requires numeric parts within range (latitude -90..90, longitude
