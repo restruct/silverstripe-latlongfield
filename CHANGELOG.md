@@ -14,7 +14,9 @@ Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major re
 - **`validateLatLong()` is stricter.** Both parts must be numeric, latitude within -90..90 and
   longitude within -180..180. `"52abc,4"` and `"999,999"` used to pass and no longer do.
 - **`calCulateDistance()` returns `null`** when either coordinate is not a valid `"lat,long"`
-  string, instead of throwing a `TypeError`.
+  string, instead of throwing a `TypeError`. Values that 1.x parsed only partly (trailing text, a
+  third part, a decimal comma, a float instead of a string) also return `null` now, where they
+  used to give a distance with a PHP warning.
 
 ### Fixed
 
@@ -53,7 +55,9 @@ Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major re
 Bug-fix release on the `v1` line (Silverstripe 4 and 5).
 
 - `calCulateDistance()` threw a `TypeError` on a malformed coordinate (for example a value from a
-  visitor's cookie); it now returns `null`.
+  visitor's cookie); it now returns `null`. Values that 1.0.6 parsed only partly (trailing text, a
+  third part, a decimal comma, a float instead of a string) also return `null` now, where they used
+  to give a distance with a PHP warning.
 - A field without address input fields threw a `TypeError` on PHP 8 as soon as it rendered.
 
 ## 1.0.6
