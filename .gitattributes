@@ -1,0 +1,2 @@
+# Keep the tests out of dist installs (Packagist zips)
+/tests export-ignore

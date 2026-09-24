@@ -85,6 +85,9 @@ class LatLongField
      */
     public function getAddressInputFields()
     {
+        # Initialised: without it, a field with no address fields counted an undefined variable,
+        # which is a TypeError on PHP 8 as soon as the template runs
+        $fields = [];
         foreach ($this->address_input_fields as $field) {
             $fields[] = is_object($field) && is_a($field, FormField::class) ? $field->getName() : $field;
         }
@@ -168,6 +171,8 @@ class LatLongField
 
     /*
      * Calculate the distance between two geo coordinates in KM
+     * Returns null when either coordinate is not a "lat,long" string with two numeric parts: this
+     * used to throw a TypeError on PHP 8, and projects pass in values from visitors' cookies.
      */
     public static function calCulateDistance($fromcoordinate, $tocoordinate, $decimals=0)
     {
@@ -197,8 +202,15 @@ class LatLongField
 //        //Debug::dump("Distance Eiffel Tower (48.858278,2.294254) - Big Ben (51.500705,-0.124575): $result KM");
 //        return $result;
 
-        [$lat1, $lng1] = explode(",", $fromcoordinate, 2);
-        [$lat2, $lng2] = explode(",", $tocoordinate, 2);
+//        [$lat1, $lng1] = explode(",", $fromcoordinate, 2);
+//        [$lat2, $lng2] = explode(",", $tocoordinate, 2);
+        $from = self::splitLatLong($fromcoordinate);
+        $to = self::splitLatLong($tocoordinate);
+        if ($from === null || $to === null) {
+            return null;
+        }
+        list($lat1, $lng1) = $from;
+        list($lat2, $lng2) = $to;
 
         $pi80 = M_PI / 180;
         $lat1 *= $pi80;
@@ -215,6 +227,30 @@ class LatLongField
 
         //return $km;
         return round($km, $decimals);
+    }
+
+    /**
+     * Split a "lat,long" string into two floats, or null when it is not a string of exactly two
+     * numeric parts (surrounding whitespace allowed). Deliberately no range check on this 1.x line,
+     * so validateLatLong() and the distances computed for existing values do not change.
+     *
+     * @param mixed $val
+     * @return float[]|null [lat, long]
+     */
+    protected static function splitLatLong($val)
+    {
+        if (!is_string($val)) {
+            return null;
+        }
+        $parts = explode(',', $val);
+        if (count($parts) !== 2) {
+            return null;
+        }
+        $parts = array_map('trim', $parts);
+        if (!is_numeric($parts[0]) || !is_numeric($parts[1])) {
+            return null;
+        }
+        return [(float) $parts[0], (float) $parts[1]];
     }
 
 }
