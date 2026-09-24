@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    # master is the repository's current default branch; main is listed too so CI keeps running
-    # unchanged once the default branch is renamed to the portfolio convention.
-    branches: [master, main]
+    # main is the default branch (portfolio convention). Older release lines (v1) are hotfix
+    # branches without CI.
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -158,28 +158,21 @@ jobs:
           # NOT flush, so the SS5 legs flush with a path-first `flush=1` argument below.
           SS_PHPUNIT_FLUSH: 1
         # Flush on every run, or a stale test manifest reads as a broken test. On SS5 the flush
-        # must be a `flush=1` argument AFTER a path: `--testsuite <name> flush=1` silently does
-        # not flush, so the suites are addressed by their directories there.
+        # must be a `flush=1` argument AFTER a path: with `--testsuite <name> flush=1`, PHPUnit 9
+        # takes `flush=1` as the test file, aborts with 'Cannot open file "flush=1".' and exits 1,
+        # so the suites are addressed by their directories there.
         #
-        # The module suite's output is kept and its test count checked: a suite that loses tests
-        # (a file the manifest no longer finds, a class that silently stops loading) still ends
-        # in OK, so "green" alone does not prove the tests ran. Update EXPECTED_TESTS when tests
-        # are added or removed. On SS6 --fail-on-empty-test-suite also fails a suite that ran
-        # nothing (PHPUnit 9 on SS5 has no such option; the count check covers it there).
+        # --fail-on-empty-test-suite on every leg (PHPUnit 9.6 accepts it too, although its --help
+        # does not list it; phpunit.xml.dist also sets failOnEmptyTestSuite): a suite that loaded
+        # no tests at all otherwise ends green.
         run: |
-          set -o pipefail
-          EXPECTED_TESTS=24
           if [ "${{ matrix.silverstripe }}" = "6" ]; then
-            vendor/bin/phpunit --fail-on-empty-test-suite --testsuite latlongfield | tee module-tests.log
+            vendor/bin/phpunit --fail-on-empty-test-suite --testsuite latlongfield
             vendor/bin/phpunit --fail-on-empty-test-suite --testsuite consumer
           else
-            vendor/bin/phpunit vendor/restruct/silverstripe-latlongfield/tests flush=1 | tee module-tests.log
-            vendor/bin/phpunit app/tests flush=1
+            vendor/bin/phpunit --fail-on-empty-test-suite vendor/restruct/silverstripe-latlongfield/tests flush=1
+            vendor/bin/phpunit --fail-on-empty-test-suite app/tests flush=1
           fi
-          grep -q "^OK (${EXPECTED_TESTS} tests," module-tests.log || {
-            echo "::error::Expected 'OK (${EXPECTED_TESTS} tests, ...)' from the module suite"
-            exit 1
-          }
 
       - name: Boot the app and build the database
         # The suite proves the classes behave; this proves the module does not break a real boot
