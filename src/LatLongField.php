@@ -6,9 +6,6 @@ use SilverStripe\Core\Environment;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FormField;
 use SilverStripe\Forms\TextField;
-use SilverStripe\ORM\ArrayList;
-use SilverStripe\ORM\FieldType\DBHTMLVarchar;
-use SilverStripe\View\ArrayData;
 use SilverStripe\View\Requirements;
 use SilverStripe\View\TemplateGlobalProvider;
 
@@ -77,18 +74,37 @@ class LatLongField
         if(!$this->RightTitle() && !$this->getDescription()) {
             $this->setDescription('Type an address (eg. “49 Oxford Street, London”) and click “🔍” (search)');
         }
-        return parent::Field($properties = []);
+        # Pass the caller's properties on (this used to be `parent::Field($properties = [])`,
+        # which silently discarded them)
+        return parent::Field($properties);
     }
 
     /**
-     * @return array of address field names
+     * @return string[]|null address field names, or null when none are set
      */
     public function getAddressInputFields()
     {
+        # Initialised: without it, a field with no address fields counted an undefined variable,
+        # which is a TypeError on PHP 8 as soon as the template runs
+        $fields = [];
         foreach ($this->address_input_fields as $field) {
             $fields[] = is_object($field) && is_a($field, FormField::class) ? $field->getName() : $field;
         }
         return count($fields) ? $fields : null;
+    }
+
+    /**
+     * JSON for the template's data-addressfields attribute ("null" when none are set).
+     *
+     * The template used to pipe the array getter through `.JSON`. Silverstripe 6 wraps a list
+     * array in an ArrayList, which has no JSON(), so the attribute rendered empty there. Encoding
+     * here gives the same output on 5 and 6; the template's default casting attribute-escapes it.
+     *
+     * @return string
+     */
+    public function getAddressInputFieldsJSON()
+    {
+        return (string) json_encode($this->getAddressInputFields());
     }
 
 
@@ -109,11 +125,22 @@ class LatLongField
     }
 
     /**
-     * @return boolean|ArrayList
+     * @return array|null options passed to the jQuery location picker, or null when none are set
      */
     public function getLocationPickerOptions()
     {
         return count($this->location_picker_options) ? $this->location_picker_options : null;
+    }
+
+    /**
+     * JSON for the template's data-locationpickeroptions attribute ("null" when none are set).
+     * See getAddressInputFieldsJSON() for why this is encoded here and not in the template.
+     *
+     * @return string
+     */
+    public function getLocationPickerOptionsJSON()
+    {
+        return (string) json_encode($this->getLocationPickerOptions());
     }
 
     /**
@@ -133,15 +160,39 @@ class LatLongField
     // validate a string to be a valid lat long value 52.12759,5.429787
     public static function validateLatLong($val)
     {
-        $LatLngArr = explode(',', $val);
-        if(count($LatLngArr) == 2){
-            if(floatval($LatLngArr[0]) && floatval($LatLngArr[1])){
-                return true;
-            }else{
-                return false;
-            }
+        return self::parseLatLong($val) !== null;
+    }
+
+    /**
+     * Split a "lat,long" string into two floats, or return null when it is not a valid coordinate:
+     * both parts numeric (surrounding whitespace allowed), latitude within -90..90 and longitude
+     * within -180..180.
+     *
+     * validateLatLong() used to test the parts with floatval(), which rejected any coordinate on
+     * the equator or the prime meridian ("0,5.1") and accepted "52abc,4" or "999,999".
+     *
+     * @param mixed $val
+     * @return float[]|null [lat, long]
+     */
+    protected static function parseLatLong($val)
+    {
+        if (!is_string($val)) {
+            return null;
         }
-        return false;
+        $LatLngArr = explode(',', $val);
+        if (count($LatLngArr) !== 2) {
+            return null;
+        }
+        [$lat, $lng] = array_map('trim', $LatLngArr);
+        if (!is_numeric($lat) || !is_numeric($lng)) {
+            return null;
+        }
+        $lat = (float) $lat;
+        $lng = (float) $lng;
+        if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            return null;
+        }
+        return [$lat, $lng];
     }
 
     public static function GeoCode($address)
@@ -168,6 +219,8 @@ class LatLongField
 
     /*
      * Calculate the distance between two geo coordinates in KM
+     * Returns null when either coordinate is not a valid "lat,long" string (see validateLatLong()):
+     * this used to throw a TypeError on PHP 8, and projects pass in values from visitors' cookies.
      */
     public static function calCulateDistance($fromcoordinate, $tocoordinate, $decimals=0)
     {
@@ -197,8 +250,15 @@ class LatLongField
 //        //Debug::dump("Distance Eiffel Tower (48.858278,2.294254) - Big Ben (51.500705,-0.124575): $result KM");
 //        return $result;
 
-        [$lat1, $lng1] = explode(",", $fromcoordinate, 2);
-        [$lat2, $lng2] = explode(",", $tocoordinate, 2);
+//        [$lat1, $lng1] = explode(",", $fromcoordinate, 2);
+//        [$lat2, $lng2] = explode(",", $tocoordinate, 2);
+        $from = self::parseLatLong($fromcoordinate);
+        $to = self::parseLatLong($tocoordinate);
+        if ($from === null || $to === null) {
+            return null;
+        }
+        [$lat1, $lng1] = $from;
+        [$lat2, $lng2] = $to;
 
         $pi80 = M_PI / 180;
         $lat1 *= $pi80;
