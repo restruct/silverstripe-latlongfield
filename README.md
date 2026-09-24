@@ -29,13 +29,13 @@ composer require restruct/silverstripe-latlongfield
 
 | Branch | Module version | Silverstripe | PHP |
 |--------|----------------|--------------|-----|
-| `master` | `2.x` | `^5 \|\| ^6` | `^8.1` |
-| (tags only) | `1.0.6` | `^4 \|\| ^5` | not declared |
+| `main` | `2.x` | `^5 \|\| ^6` | `^8.1` |
+| `v1` | `1.0.6` - `1.0.7` | `^4 \|\| ^5` | not declared |
 | (tags only) | `1.0.0` - `1.0.5` | 4 (not declared) | not declared |
 
 `composer.json` is the source of truth; this table is a convenience copy. Silverstripe 4 reached
 end of life in April 2025 and is no longer supported or tested here. Projects still on it should
-stay on the `1.x` tags, which remain available. Upgrading from 1.x: see [UPGRADING.md](UPGRADING.md).
+stay on the `1.x` tags, which remain available; `v1` takes bug fixes only. Upgrading from 1.x: see [UPGRADING.md](UPGRADING.md).
 
 ## Config
 
@@ -63,7 +63,7 @@ $fields->addFieldToTab('Root.Main', $gps = LatLongField::create('GPS', 'Position
 
 Without address fields, the editor types an address into the field itself and clicks the search
 button; the map opens and the field's value is replaced with the coordinates. The marker can be
-dragged, or the map double-clicked, to adjust them. The "×" button clears the value.
+dragged, or the map double-clicked, to adjust them. The "x" (clear) button clears the value.
 
 ### Look up the address from other fields
 
@@ -132,7 +132,8 @@ Constructing the field adds these requirements to the page:
 
 The suite needs a booted Silverstripe project. Require the module into one through a **symlinked**
 path repository (`/tests` is `export-ignore`, so a dist install has no tests), add
-`silverstripe/recipe-testing`, copy `phpunit.xml.dist` to the project root, then:
+`silverstripe/recipe-testing` (and `silverstripe/cms` for the CMS render test, which is skipped
+without it), copy `phpunit.xml.dist` to the project root, then:
 
 ```
 # Silverstripe 6: flush through the environment

@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 (unreleased)
+## 2.0.0 (2026-09-25)
 
 Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major release. See
 [UPGRADING.md](UPGRADING.md).
@@ -47,6 +47,14 @@ Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major re
 ### Issues
 
 - No issues were open (or had ever been filed) at the time of this release.
+
+## 1.0.7 (2026-09-25)
+
+Bug-fix release on the `v1` line (Silverstripe 4 and 5).
+
+- `calCulateDistance()` threw a `TypeError` on a malformed coordinate (for example a value from a
+  visitor's cookie); it now returns `null`.
+- A field without address input fields threw a `TypeError` on PHP 8 as soon as it rendered.
 
 ## 1.0.6
 
