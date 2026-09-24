@@ -140,6 +140,54 @@ class LatLongFieldTest extends SapphireTest
         $this->assertStringContainsString('text', $attrs['class'], 'the "text" class is added for CMS styling');
     }
 
+    /**
+     * Regression: the template shipped Bootstrap 4 input-group markup onto the Silverstripe 6 CMS,
+     * whose Bootstrap 5 stylesheet has no rules for .input-group-prepend / .input-group-append /
+     * .font-weight-bold. The expected markup follows the Bootstrap major the installed admin
+     * declares in its package.json, not the field's own switch, so a wrong switch fails here.
+     */
+    public function testInputGroupMarkupMatchesTheCmsBootstrapVersion()
+    {
+        $bootstrap = $this->adminBootstrapMajor();
+        $field = LatLongField::create('GPS', 'Position', '52.1,4.4');
+        $html = (string) $field->Field();
+
+        if ($bootstrap >= 5) {
+            $this->assertStringNotContainsString('input-group-prepend', $html);
+            $this->assertStringNotContainsString('input-group-append', $html);
+            $this->assertStringNotContainsString('font-weight-bold', $html);
+            # Buttons and input are direct children of .input-group, which BS5 styles
+            $this->assertMatchesRegularExpression('#<div class="input-group latlong-fieldgroup">\s*<input class="[^"]*\bbtn-latlong-search\b#', $html);
+            $this->assertMatchesRegularExpression('#<input class="[^"]*\bbtn-latlong-clear fw-bold"#', $html);
+        } else {
+            $this->assertMatchesRegularExpression('#<div class="input-group-prepend">\s*<input class="[^"]*\bbtn-latlong-search\b#', $html);
+            $this->assertMatchesRegularExpression('#<div class="input-group-append">\s*<input class="[^"]*\bbtn-latlong-clear font-weight-bold"#', $html);
+            $this->assertStringNotContainsString('fw-bold', $html);
+        }
+        # latlongfield.js binds the clear button through input.parent(): it must stay a descendant
+        # of the input's parent in both shapes
+        $this->assertMatchesRegularExpression('#<div class="input-group latlong-fieldgroup">.*<input type="text"[^>]*class="latlong text".*btn-latlong-clear.*</div>\s*$#s', $html);
+    }
+
+    /**
+     * Bootstrap major of the installed CMS, from silverstripe/admin's package.json; without admin
+     * (or its package.json) the framework major decides: admin 2 (BS4) goes with framework 5,
+     * admin 3 (BS5) with framework 6.
+     */
+    private function adminBootstrapMajor(): int
+    {
+        $admin = \SilverStripe\Core\Manifest\ModuleLoader::getModule('silverstripe/admin');
+        $package = $admin ? $admin->getPath() . '/package.json' : null;
+        if ($package && is_readable($package)) {
+            $json = json_decode(file_get_contents($package), true);
+            $constraint = $json['dependencies']['bootstrap'] ?? $json['devDependencies']['bootstrap'] ?? null;
+            if ($constraint && preg_match('#(\d+)#', $constraint, $m)) {
+                return (int) $m[1];
+            }
+        }
+        return class_exists(ViewLayerData::class) ? 5 : 4;
+    }
+
     public function testFieldIsReadonlyWhenAddressFieldsAreSet()
     {
         $field = LatLongField::create('GPS', 'Position');

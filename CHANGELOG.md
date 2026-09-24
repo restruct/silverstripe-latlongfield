@@ -28,6 +28,10 @@ Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major re
 - `calCulateDistance()` threw a `TypeError` on a malformed coordinate. Projects that pass a value
   from a visitor's cookie got a server error from a bad cookie.
 - `Field()` discarded the properties passed to it.
+- On Silverstripe 6 the search and clear buttons used Bootstrap 4 input-group markup
+  (`input-group-prepend`, `input-group-append`, `font-weight-bold`), which the Bootstrap 5 CMS has
+  no styles for. The template now renders flat Bootstrap 5 markup (`fw-bold`) on Silverstripe 6 and
+  keeps the Bootstrap 4 markup on Silverstripe 5 (`getUsesBootstrap4InputGroup()`).
 
 ### Added
 

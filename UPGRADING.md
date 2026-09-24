@@ -25,3 +25,5 @@ environment variables and the `$GMapsApiKey` template variable are unchanged. No
 - **If you override the `LatLongField` template**: the data attributes now use
   `$AddressInputFieldsJSON` and `$LocationPickerOptionsJSON`. The old `$AddressInputFields.JSON`
   form renders empty on Silverstripe 6.
+  The button markup also differs per major now: Bootstrap 4 wrappers on Silverstripe 5, flat
+  Bootstrap 5 markup on Silverstripe 6 (`$UsesBootstrap4InputGroup` in the template).

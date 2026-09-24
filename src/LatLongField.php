@@ -80,6 +80,24 @@ class LatLongField
     }
 
     /**
+     * Whether to render the Bootstrap 4 input-group markup (buttons wrapped in
+     * .input-group-prepend / .input-group-append, "font-weight-bold") instead of the flat
+     * Bootstrap 5 markup ("fw-bold").
+     *
+     * The Silverstripe 5 CMS (silverstripe/admin 2) ships Bootstrap 4; the Silverstripe 6 CMS
+     * (admin 3) ships Bootstrap 5, whose stylesheet has no rules at all for the BS4 wrappers, so the
+     * old markup left the buttons unstyled and applied BS5's seam-join to the wrappers instead.
+     * admin 3 requires framework 6, so the framework major is an exact proxy: ViewLayerData only
+     * exists in framework 6. Front-end forms without Bootstrap are unaffected either way.
+     *
+     * @return bool
+     */
+    public function getUsesBootstrap4InputGroup()
+    {
+        return !class_exists('SilverStripe\\View\\ViewLayerData');
+    }
+
+    /**
      * @return string[]|null address field names, or null when none are set
      */
     public function getAddressInputFields()
