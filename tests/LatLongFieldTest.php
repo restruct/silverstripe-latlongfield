@@ -287,8 +287,11 @@ class LatLongFieldTest extends SapphireTest
         # Eiffel Tower to Big Ben: about 340 km
         $km = LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575', 1);
         $this->assertEqualsWithDelta(340.5, $km, 1.0);
+        # $decimals is honoured (haversine on the 6372.797 km mean radius gives 340.6375...)
+        $this->assertSame(340.6, $km);
+        $this->assertSame(340.64, LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575', 2));
 
-        $this->assertEquals(341, LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575'));
+        $this->assertEquals(341,LatLongField::calCulateDistance('48.858278,2.294254', '51.500705,-0.124575'));
         $this->assertEquals(0, LatLongField::calCulateDistance('52.1,4.4', '52.1,4.4'));
         # A space after the comma, as in hand-typed coordinates
         $this->assertEqualsWithDelta(340.5, LatLongField::calCulateDistance('48.858278, 2.294254', '51.500705, -0.124575', 1), 1.0);
