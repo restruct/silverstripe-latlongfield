@@ -8,6 +8,8 @@
     <testsuites>
         <testsuite name="latlongfield">
             <directory>vendor/restruct/silverstripe-latlongfield/tests</directory>
+            <!-- Playwright browser tests (TypeScript, own runner, node_modules): not PHPUnit's -->
+            <exclude>vendor/restruct/silverstripe-latlongfield/tests/browser</exclude>
         </testsuite>
     </testsuites>
 </phpunit>
