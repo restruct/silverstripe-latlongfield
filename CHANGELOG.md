@@ -6,6 +6,14 @@
 
 - `geocode_timeout` config (seconds, default 5): how long `GeoCode()` waits for Google.
 
+### Changed
+
+- The stylesheet, both scripts and the Google Maps JavaScript API are added to `Requirements`
+  when the field renders (`Field()`) instead of in the constructor. Building a form or
+  `getCMSFields()` without rendering it no longer queues them, or the Maps API key, for the page.
+  A project that constructed a `LatLongField` only to get the Maps API onto a page has to add it
+  itself now. (#4)
+
 ### Fixed
 
 - `GeoCode()` had no timeout, so an unreachable or slow Google endpoint held the request for PHP's

@@ -40,10 +40,10 @@ class LatLongField
     {
         parent::__construct($name, $title, $value, $maxLength, $form);
 
-        Requirements::css('restruct/silverstripe-latlongfield:client/css/latlongfield.css');
-        Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
-        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
-        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
+        # The Requirements calls that were here moved to Field() (#4): here they were queued by
+        # merely building a form or getCMSFields() (exports, API responses, tests), Maps API key
+        # included. (Not kept as commented-out copies: ResourcesTest reads the resource paths out
+        # of this file, and would count them twice.)
     }
 
     public static function get_template_global_variables()
@@ -74,6 +74,14 @@ class LatLongField
 
     public function Field($properties = [])
     {
+        # Only when the field is actually rendered (#4). FieldHolder() renders through $Field, and
+        # in the CMS an AJAX (PJAX) response passes requirements added during rendering on in its
+        # X-Include-JS/-CSS headers (HTTPResponse::output()), so this is early enough there too.
+        Requirements::css('restruct/silverstripe-latlongfield:client/css/latlongfield.css');
+        Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
+        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
+        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
+
         $this->addExtraClass('text'); // for styling...
 
         if($this->address_input_fields) {

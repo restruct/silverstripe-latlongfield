@@ -127,7 +127,9 @@ already has a description or a right title.
 
 ## Assets
 
-Constructing the field adds these requirements to the page:
+Rendering the field (`Field()`, so also `FieldHolder()` and a form template) adds these
+requirements to the page. Constructing it adds nothing, so building a form or `getCMSFields()`
+without rendering it (exports, API responses) does not queue them:
 
 * the Google Maps JavaScript API, with the browser key (see [Config](#config))
 * `client/js/jquery.locationpicker.js` and `client/js/latlongfield.js`
