@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.1.0 (2026-10-08)
+
+### Added
+
+- `geocode_timeout` config (seconds, default 5): how long `GeoCode()` waits for Google.
+
+### Changed
+
+- The stylesheet, both scripts and the Google Maps JavaScript API are added to `Requirements`
+  when the field renders (`Field()`) instead of in the constructor. Building a form or
+  `getCMSFields()` without rendering it no longer queues them, or the Maps API key, for the page.
+  A project that constructed a `LatLongField` only to get the Maps API onto a page has to add it
+  itself now. (#4)
+
+### Fixed
+
+- `GeoCode()` had no timeout, so an unreachable or slow Google endpoint held the request for PHP's
+  `default_socket_timeout` (60 s by default). (#3)
+- `GeoCode()` raised two PHP warnings on a network failure, and one on a response that is not
+  JSON. It now returns `null` and logs a warning through `Psr\Log\LoggerInterface` with the
+  failure kind or API status, the HTTP status line and the timeout; never the address (personal
+  data), the URL or the key. (#3)
+- `GeoCode()` without `GMAPS_API_KEY` returned `true` (the return value of `user_error()`)
+  instead of `null`. It still raises the same `E_USER_NOTICE`. (#3)
+
 ## 2.0.0 (2026-09-25)
 
 Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major release. See

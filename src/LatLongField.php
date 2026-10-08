@@ -2,7 +2,9 @@
 
 namespace Restruct\SilverStripe\Forms;
 
+use Psr\Log\LoggerInterface;
 use SilverStripe\Core\Environment;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FormField;
 use SilverStripe\Forms\TextField;
@@ -14,6 +16,15 @@ class LatLongField
     implements TemplateGlobalProvider
 {
     protected $template = 'LatLongField';
+
+    /**
+     * Seconds GeoCode() waits for the Google Geocoding API (connect and each read) before it
+     * gives up and returns null.
+     *
+     * @config
+     * @var float
+     */
+    private static $geocode_timeout = 5;
 
     /**
      * @var string[]
@@ -29,10 +40,10 @@ class LatLongField
     {
         parent::__construct($name, $title, $value, $maxLength, $form);
 
-        Requirements::css('restruct/silverstripe-latlongfield:client/css/latlongfield.css');
-        Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
-        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
-        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
+        # The Requirements calls that were here moved to Field() (#4): here they were queued by
+        # merely building a form or getCMSFields() (exports, API responses, tests), Maps API key
+        # included. (Not kept as commented-out copies: ResourcesTest reads the resource paths out
+        # of this file, and would count them twice.)
     }
 
     public static function get_template_global_variables()
@@ -63,6 +74,14 @@ class LatLongField
 
     public function Field($properties = [])
     {
+        # Only when the field is actually rendered (#4). FieldHolder() renders through $Field, and
+        # in the CMS an AJAX (PJAX) response passes requirements added during rendering on in its
+        # X-Include-JS/-CSS headers (HTTPResponse::output()), so this is early enough there too.
+        Requirements::css('restruct/silverstripe-latlongfield:client/css/latlongfield.css');
+        Requirements::javascript('//maps.google.com/maps/api/js?key=' . self::gmaps_api_key());
+        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/jquery.locationpicker.js');
+        Requirements::javascript('restruct/silverstripe-latlongfield:client/js/latlongfield.js');
+
         $this->addExtraClass('text'); // for styling...
 
         if($this->address_input_fields) {
@@ -215,25 +234,130 @@ class LatLongField
         return [$lat, $lng];
     }
 
+    /**
+     * Geocode an address through the Google Geocoding API, with GMAPS_API_KEY (never the browser
+     * key).
+     *
+     * Returns null on every failure (no key, network error or timeout, a response that is not
+     * JSON, a status other than OK). A request that fails or gets no usable answer is logged
+     * through Psr\Log\LoggerInterface and raises no PHP warning (it used to raise two). A missing
+     * key still raises its E_USER_NOTICE, but returns null now instead of the bool user_error()
+     * returns (issue #3).
+     *
+     * @param string $address
+     * @return array|null the first result (`geometry.location` holds `lat`/`lng`), or null
+     */
     public static function GeoCode($address)
     {
         $gmaps_api_key = self::gmaps_api_key(true);
         if(!$gmaps_api_key) {
-            return user_error('No GMAPS_API_KEY set in ENV, LatLongField::GeoCode()');
+//            return user_error('No GMAPS_API_KEY set in ENV, LatLongField::GeoCode()');
+            # The notice stays (a missing key is a configuration error, and projects may rely on
+            # seeing it), but its return value no longer reaches the caller: user_error() returns
+            # true, which callers took for a result.
+            user_error('No GMAPS_API_KEY set in ENV, LatLongField::GeoCode()');
+            return null;
         }
 
         //https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY
         $url = "https://maps.googleapis.com/maps/api/geocode/json?key={$gmaps_api_key}";
         $url .= "&address=" . urlencode($address);
 
-        $result = file_get_contents($url);
+        # Bounded wait: without a timeout an unreachable or slow endpoint holds the request for
+        # PHP's default_socket_timeout (60 s by default). The http wrapper applies it to the
+        # connect and to each read.
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => (float) static::config()->get('geocode_timeout'),
+            ],
+        ]);
+
+        # A failed request (DNS, refused, timeout, HTTP error status) makes file_get_contents()
+        # warn and return false. Swallow the warning here instead of passing it on to the
+        # project's error handler. Its text is not logged either: it quotes the URL, which holds
+        # both the server key and the address (personal data).
+        set_error_handler(function () {
+            return true;
+        });
+        try {
+//            $result = file_get_contents($url);
+            $result = file_get_contents($url, false, $context);
+        } finally {
+            restore_error_handler();
+        }
+
+        if ($result === false) {
+            # Log the kind of failure, the HTTP status line if a response arrived, and the timeout
+            # in force; never the URL or the address
+            self::geocode_logger()->warning(sprintf(
+                'LatLongField::GeoCode(): request failed (%s, timeout %ss)',
+                self::geocode_http_status(
+                    # PHP fills $http_response_header only in a scope that names it, so it is read
+                    # here, in the caller. On PHP 8.4+ this branch is not taken (no deprecation on
+                    # 8.5, measured) and geocode_http_status() asks the function instead.
+                    function_exists('http_get_last_response_headers') ? null : ($http_response_header ?? null)
+                ) ?? 'no HTTP response',
+                (float) static::config()->get('geocode_timeout')
+            ));
+            return null;
+        }
+
         $data = json_decode($result, TRUE);
+        # json_decode() gives null (or a scalar) for a body that is not a JSON object; reading
+        # 'status' off that used to warn
+        $status = is_array($data) ? ($data['status'] ?? null) : null;
 
         // return first result
-        if($data['status']=="OK"){
+//        if($data['status']=="OK"){
+        if ($status === 'OK' && is_array($data['results'] ?? null) && $data['results']) {
             return array_shift($data['results']);
         }
+
+        # ZERO_RESULTS is an answer, not a failure: nothing to log
+        if ($status !== 'ZERO_RESULTS') {
+            # The status only: not the address, and not Google's error_message, which is free
+            # text that may quote the request
+            self::geocode_logger()->warning(sprintf(
+                'LatLongField::GeoCode(): no result (%s)',
+                $status === null ? 'the response is not JSON' : 'status ' . $status
+            ));
+        }
         return null;
+    }
+
+    /**
+     * The HTTP status line of the last response (eg. "HTTP/1.1 403 Forbidden"), or null when no
+     * response arrived (DNS failure, refused, timeout before the headers).
+     *
+     * PHP 8.4 added http_get_last_response_headers() and 8.5 deprecates the
+     * $http_response_header variable that file_get_contents() sets in the caller's scope, so
+     * the function is preferred where it exists and the caller passes the variable in on older PHP.
+     *
+     * @param array|null $responseHeaders $http_response_header from the caller, if set
+     * @return string|null
+     */
+    protected static function geocode_http_status($responseHeaders = null)
+    {
+        if (function_exists('http_get_last_response_headers')) {
+            $responseHeaders = http_get_last_response_headers();
+        }
+        if (!is_array($responseHeaders)) {
+            return null;
+        }
+        # With redirects the array holds every response in turn; the last status line counts
+        $statusLines = preg_grep('#^HTTP/\S+\s+\d{3}#', $responseHeaders);
+        return $statusLines ? trim(end($statusLines)) : null;
+    }
+
+    /**
+     * The project's standard logger (Psr\Log\LoggerInterface; Silverstripe registers it with no
+     * handlers attached, so projects decide where these messages go).
+     *
+     * @return LoggerInterface
+     */
+    protected static function geocode_logger()
+    {
+        return Injector::inst()->get(LoggerInterface::class);
     }
 
 

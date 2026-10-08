@@ -51,6 +51,14 @@ GMAPS_BROWSER_KEY="..." (optional secondary 'public' key to use in the browser)
   JavaScript API and the `$GMapsApiKey` template variable), so the server key never has to be
   published. Restrict it by HTTP referrer in the Google Cloud console.
 
+`GeoCode()` waits at most `geocode_timeout` seconds (default 5) for Google, for the connect and
+for each read:
+
+```yaml
+Restruct\SilverStripe\Forms\LatLongField:
+  geocode_timeout: 3
+```
+
 **SS3-4 upgrade:** moved LatLongField::google_maps_api_key to environment var (see Config above)
 
 ## Usage
@@ -114,12 +122,14 @@ already has a description or a right title.
 |--------|---------|
 | `LatLongField::validateLatLong($value)` | `true` for a `"lat,long"` string with numeric parts, latitude -90..90 and longitude -180..180 (whitespace around the parts is allowed) |
 | `LatLongField::calCulateDistance($from, $to, $decimals = 0)` | distance in km between two `"lat,long"` strings (haversine), rounded to `$decimals`; `null` if either is not a valid coordinate |
-| `LatLongField::GeoCode($address)` | the first result of the Google Geocoding API for `$address` as an array (`geometry.location` holds `lat`/`lng`), or `null`. Uses `GMAPS_API_KEY`, never the browser key |
+| `LatLongField::GeoCode($address)` | the first result of the Google Geocoding API for `$address` as an array (`geometry.location` holds `lat`/`lng`), or `null` on any failure. Uses `GMAPS_API_KEY`, never the browser key. A failed request (network error, timeout, a response that is not JSON, a status other than `OK` or `ZERO_RESULTS`) is logged as a warning through `Psr\Log\LoggerInterface` (the failure kind or API status, the HTTP status line if a response arrived, and the timeout; never the address, the URL or the key), and raises no PHP warning. Without `GMAPS_API_KEY` it raises an `E_USER_NOTICE` and returns `null` |
 | `LatLongField::gmaps_api_key($requirePrimaryKey = false)` | the browser key if set, else `GMAPS_API_KEY`; with `true`, always `GMAPS_API_KEY` |
 
 ## Assets
 
-Constructing the field adds these requirements to the page:
+Rendering the field (`Field()`, so also `FieldHolder()` and a form template) adds these
+requirements to the page. Constructing it adds nothing, so building a form or `getCMSFields()`
+without rendering it (exports, API responses) does not queue them:
 
 * the Google Maps JavaScript API, with the browser key (see [Config](#config))
 * `client/js/jquery.locationpicker.js` and `client/js/latlongfield.js`
