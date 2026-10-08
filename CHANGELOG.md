@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.1.0 (unreleased)
+
+### Added
+
+- `geocode_timeout` config (seconds, default 5): how long `GeoCode()` waits for Google.
+
+### Fixed
+
+- `GeoCode()` had no timeout, so an unreachable or slow Google endpoint held the request for PHP's
+  `default_socket_timeout` (60 s by default). (#3)
+- `GeoCode()` raised two PHP warnings on a network failure, and one on a response that is not
+  JSON. It now returns `null` and logs a warning through `Psr\Log\LoggerInterface` (the server
+  key is masked in the message). (#3)
+- `GeoCode()` without `GMAPS_API_KEY` returned `true` (the return value of `user_error()`)
+  instead of `null`. It still raises the same `E_USER_NOTICE`. (#3)
+
 ## 2.0.0 (2026-09-25)
 
 Silverstripe 5 and 6. Silverstripe 4 is dropped, which is why this is a major release. See

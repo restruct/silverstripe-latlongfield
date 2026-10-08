@@ -51,6 +51,14 @@ GMAPS_BROWSER_KEY="..." (optional secondary 'public' key to use in the browser)
   JavaScript API and the `$GMapsApiKey` template variable), so the server key never has to be
   published. Restrict it by HTTP referrer in the Google Cloud console.
 
+`GeoCode()` waits at most `geocode_timeout` seconds (default 5) for Google, for the connect and
+for each read:
+
+```yaml
+Restruct\SilverStripe\Forms\LatLongField:
+  geocode_timeout: 3
+```
+
 **SS3-4 upgrade:** moved LatLongField::google_maps_api_key to environment var (see Config above)
 
 ## Usage
@@ -114,7 +122,7 @@ already has a description or a right title.
 |--------|---------|
 | `LatLongField::validateLatLong($value)` | `true` for a `"lat,long"` string with numeric parts, latitude -90..90 and longitude -180..180 (whitespace around the parts is allowed) |
 | `LatLongField::calCulateDistance($from, $to, $decimals = 0)` | distance in km between two `"lat,long"` strings (haversine), rounded to `$decimals`; `null` if either is not a valid coordinate |
-| `LatLongField::GeoCode($address)` | the first result of the Google Geocoding API for `$address` as an array (`geometry.location` holds `lat`/`lng`), or `null`. Uses `GMAPS_API_KEY`, never the browser key |
+| `LatLongField::GeoCode($address)` | the first result of the Google Geocoding API for `$address` as an array (`geometry.location` holds `lat`/`lng`), or `null` on any failure. Uses `GMAPS_API_KEY`, never the browser key. A failed request (network error, timeout, a response that is not JSON, a status other than `OK` or `ZERO_RESULTS`) is logged as a warning through `Psr\Log\LoggerInterface`, with the key masked, and raises no PHP warning. Without `GMAPS_API_KEY` it raises an `E_USER_NOTICE` and returns `null` |
 | `LatLongField::gmaps_api_key($requirePrimaryKey = false)` | the browser key if set, else `GMAPS_API_KEY`; with `true`, always `GMAPS_API_KEY` |
 
 ## Assets
