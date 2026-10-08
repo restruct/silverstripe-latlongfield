@@ -265,11 +265,13 @@ class LatLongFieldTest extends SapphireTest
 
     # --- Requirements and API key -----------------------------------------------------------
 
-    public function testConstructorAddsTheScriptsAndStylesheet()
+    public function testRenderingAddsTheScriptsAndStylesheet()
     {
         Environment::setEnv('GMAPS_API_KEY', 'server-key');
         Environment::setEnv('GMAPS_BROWSER_KEY', '');
-        LatLongField::create('GPS');
+        # Rendered, not just constructed: the requirements move from the constructor to Field()
+        # (issue #4); FieldRequirementsTest pins that construction alone queues nothing.
+        LatLongField::create('GPS')->Field();
 
         $js = array_keys(Requirements::backend()->getJavascript());
         $css = array_keys(Requirements::backend()->getCSS());
@@ -284,7 +286,8 @@ class LatLongFieldTest extends SapphireTest
     {
         Environment::setEnv('GMAPS_API_KEY', 'server-key');
         Environment::setEnv('GMAPS_BROWSER_KEY', 'browser-key');
-        LatLongField::create('GPS');
+        # Rendered, not just constructed (issue #4, see above)
+        LatLongField::create('GPS')->Field();
 
         $this->assertSame('browser-key', LatLongField::gmaps_api_key());
         $this->assertSame('server-key', LatLongField::gmaps_api_key(true));
