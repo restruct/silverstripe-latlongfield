@@ -273,11 +273,10 @@ class LatLongField
         ]);
 
         # A failed request (DNS, refused, timeout, HTTP error status) makes file_get_contents()
-        # warn and return false. Catch the warning here instead of passing it on to the project's
-        # error handler, and log it below with the key masked (the message contains the URL).
-        $requestError = null;
-        set_error_handler(function ($errno, $errstr) use (&$requestError) {
-            $requestError = $errstr;
+        # warn and return false. Swallow the warning here instead of passing it on to the
+        # project's error handler. Its text is not logged either: it quotes the URL, which holds
+        # both the server key and the address (personal data).
+        set_error_handler(function () {
             return true;
         });
         try {
@@ -288,10 +287,17 @@ class LatLongField
         }
 
         if ($result === false) {
+            # Log the kind of failure, the HTTP status line if a response arrived, and the timeout
+            # in force; never the URL or the address
             self::geocode_logger()->warning(sprintf(
-                'LatLongField::GeoCode(): request failed for "%s": %s',
-                $address,
-                str_replace($gmaps_api_key, '***', (string) $requestError)
+                'LatLongField::GeoCode(): request failed (%s, timeout %ss)',
+                self::geocode_http_status(
+                    # PHP fills $http_response_header only in a scope that names it, so it is read
+                    # here, in the caller. On PHP 8.4+ this branch is not taken (no deprecation on
+                    # 8.5, measured) and geocode_http_status() asks the function instead.
+                    function_exists('http_get_last_response_headers') ? null : ($http_response_header ?? null)
+                ) ?? 'no HTTP response',
+                (float) static::config()->get('geocode_timeout')
             ));
             return null;
         }
@@ -309,15 +315,38 @@ class LatLongField
 
         # ZERO_RESULTS is an answer, not a failure: nothing to log
         if ($status !== 'ZERO_RESULTS') {
+            # The status only: not the address, and not Google's error_message, which is free
+            # text that may quote the request
             self::geocode_logger()->warning(sprintf(
-                'LatLongField::GeoCode(): no result for "%s": %s',
-                $address,
-                $status === null
-                    ? 'the response is not JSON'
-                    : $status . (isset($data['error_message']) ? ' (' . $data['error_message'] . ')' : '')
+                'LatLongField::GeoCode(): no result (%s)',
+                $status === null ? 'the response is not JSON' : 'status ' . $status
             ));
         }
         return null;
+    }
+
+    /**
+     * The HTTP status line of the last response (eg. "HTTP/1.1 403 Forbidden"), or null when no
+     * response arrived (DNS failure, refused, timeout before the headers).
+     *
+     * PHP 8.4 added http_get_last_response_headers() and 8.5 deprecates the
+     * $http_response_header variable that file_get_contents() sets in the caller's scope, so
+     * the function is preferred where it exists and the caller passes the variable in on older PHP.
+     *
+     * @param array|null $responseHeaders $http_response_header from the caller, if set
+     * @return string|null
+     */
+    protected static function geocode_http_status($responseHeaders = null)
+    {
+        if (function_exists('http_get_last_response_headers')) {
+            $responseHeaders = http_get_last_response_headers();
+        }
+        if (!is_array($responseHeaders)) {
+            return null;
+        }
+        # With redirects the array holds every response in turn; the last status line counts
+        $statusLines = preg_grep('#^HTTP/\S+\s+\d{3}#', $responseHeaders);
+        return $statusLines ? trim(end($statusLines)) : null;
     }
 
     /**

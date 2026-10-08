@@ -196,12 +196,35 @@ class GeoCodeTest extends SapphireTest
         $logged = $this->logged();
         $this->assertCount(3, $logged, 'one warning per failure');
         $this->assertTrue($this->log->hasWarningRecords());
-        $this->assertStringContainsString('request failed for "Leiden"', $logged[0]);
-        $this->assertStringContainsString('REQUEST_DENIED (key invalid)', $logged[1]);
+        # The failure kind, HTTP status (none: the stub sends no headers) and the timeout in force
+        $this->assertStringContainsString('request failed (no HTTP response, timeout 5s)', $logged[0]);
+        $this->assertStringContainsString('no result (status REQUEST_DENIED)', $logged[1]);
         $this->assertStringContainsString('not JSON', $logged[2]);
         # The failed-request warning quotes the URL, which carries the server key
         foreach ($logged as $message) {
             $this->assertStringNotContainsString('server-key', $message);
+        }
+    }
+
+    /**
+     * The geocoded address is personal data and stays out of the log, in every failure path:
+     * neither the message nor its context may carry it, nor the URL it is part of. Google's
+     * free-text error_message is left out too, as it may quote the request.
+     */
+    public function testLogRecordsDoNotContainTheAddress()
+    {
+        $address = 'Jan Jansen, Geheimstraat 13, Leiden';
+        $this->geoCode($address, null);
+        $this->geoCode($address, json_encode(['status' => 'INVALID_REQUEST', 'error_message' => "Bad request for $address"]));
+        $this->geoCode($address, 'not json');
+
+        $records = $this->log->getRecords();
+        $this->assertCount(3, $records);
+        foreach ($records as $record) {
+            $dump = json_encode([(string) $record['message'], $record['context'], $record['extra']]);
+            foreach (['Geheimstraat', 'Jansen', urlencode('Geheimstraat'), 'maps.googleapis.com'] as $needle) {
+                $this->assertStringNotContainsString($needle, $dump);
+            }
         }
     }
 
